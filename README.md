@@ -7,7 +7,7 @@ opinionated Python code formatter.
 
 ## Installing the Black Vim Plugin
 
-You should probably have the Black vim plugin installed
+You should probably install the Black vim plugin
 before you install the eight ball vim plugin, since the
 Black vim plugin provides some basic functionality that
 is extended with this plugin.
@@ -27,7 +27,7 @@ mkdir -p \
 
 ## Installing the Eight Ball Vim Plugin
 
-Copy the eight-ball plugin at `plugin/eightball.vim` to 
+Copy the eight-ball plugin at `plugin/eightball.vim` to
 `~/.vim/plugin/eightball.vim` to install the eight-ball
 vim plugin.
 
@@ -36,5 +36,5 @@ mkdir -p \
     ~/.vim/plugin \
     && curl -LSso \
     ~/.vim/plugin/eightball.vim \
-    https://raw.githubusercontent.com/chmreid/eightball/master/plugin/black.vim
+    https://raw.githubusercontent.com/chmreid/eightball/master/plugin/eightball.vim
 ```
