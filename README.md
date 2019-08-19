@@ -13,7 +13,7 @@ Black vim plugin provides some basic functionality that
 is extended with this plugin.
 
 Clone the [Black repo](https://github.com/psf/black), and copy
-the Black plugin at `plugins/black.vim` to `~/.vim/plugins/black.vim`.
+the Black plugin at `plugin/black.vim` to `~/.vim/plugin/black.vim`.
 
 Or just run this one-liner:
 
@@ -27,8 +27,8 @@ mkdir -p \
 
 ## Installing the Eight Ball Vim Plugin
 
-Copy the eight-ball plugin at `plugins/eightball.vim` to 
-`~/.vim/plugins/eightball.vim` to install the eight-ball
+Copy the eight-ball plugin at `plugin/eightball.vim` to 
+`~/.vim/plugin/eightball.vim` to install the eight-ball
 vim plugin.
 
 ```
