@@ -7,25 +7,15 @@ opinionated Python code formatter.
 
 ## Installing the Black Vim Plugin
 
-You should probably install the Black vim plugin
-before you install the eight ball vim plugin, since the
-Black vim plugin provides some basic functionality that
-is extended with this plugin.
+It is not necessary to install the Black vim plugin, since eightball is intended
+to provide the same functionality, but generalized to provide additional packages
+besides Black.
 
-Clone the [Black repo](https://github.com/psf/black), and copy
-the Black plugin at `plugin/black.vim` to `~/.vim/plugin/black.vim`.
+If you already have the Black vim plugin installed, not to worry - the eightball
+plugin defines the same functions as Black, with the same names, so there should not
+be any conflicts with Black.
 
-Or just run this one-liner:
-
-```
-mkdir -p \
-    ~/.vim/plugin \
-    && curl -LSso \
-    ~/.vim/plugin/black.vim \
-    https://raw.githubusercontent.com/psf/black/master/plugin/black.vim
-```
-
-## Installing the Eight Ball Vim Plugin
+## Installing the Eightball Vim Plugin
 
 Copy the eight-ball plugin at `plugin/eightball.vim` to
 `~/.vim/plugin/eightball.vim` to install the eight-ball
