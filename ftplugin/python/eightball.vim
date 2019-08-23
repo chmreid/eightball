@@ -23,9 +23,9 @@ if v:version < 700 || !has('python3')
     finish
 endif
 
-"if exists("g:load_eightball")
-"   finish
-"endif
+if exists("g:load_eightball")
+   finish
+endif
 
 let g:load_eightball = "py1.0"
 
@@ -107,6 +107,7 @@ def _initialize_package_env(package_name, upgrade=False):
     import venv
     virtualenv_path = Path(vim.eval(f"g:virtualenv_path")).expanduser()
     virtualenv_site_packages = str(_get_virtualenv_site_packages(virtualenv_path, pyver))
+    first_install = False
     if not virtualenv_path.is_dir():
         print('Please wait, one time virtualenv setup for eightball.')
         _executable = sys.executable
@@ -117,13 +118,18 @@ def _initialize_package_env(package_name, upgrade=False):
             venv.create(virtualenv_path, with_pip=True)
         finally:
             sys.executable = _executable
+        first_instal = True
+    if first_install:
+        print(f'Installing {package_name} with pip...')
     if upgrade:
         print(f'Upgrading {package_name} with pip...')
-    pp = str(_get_pip(virtualenv_path))
-    proc = subprocess.run(
-        [pp, 'install', '-U', package_name],
-        stdout=subprocess.PIPE
-    )
+    if first_install or upgrade:
+        pp = str(_get_pip(virtualenv_path))
+        proc = subprocess.run(
+            [pp, 'install', '-U', package_name],
+            stdout=subprocess.PIPE
+        )
+        print(f'Finished installing {package_name}')
     if sys.path[0] != virtualenv_site_packages:
         sys.path.insert(0, virtualenv_site_packages)
     return True
@@ -134,8 +140,7 @@ def _install_latest_pip(upgrade=False):
 # This will automatically install a virtual environment
 if _install_latest_pip():
     import time
-else:
-    print("Could not install latest pip. :(")
+
 
 ##############################
 # Vim selection functions
@@ -217,8 +222,7 @@ def _initialize_black_env(upgrade=False):
 if _initialize_black_env():
     import black
     import time
-else:
-    print("Could not initialize black. :(")
+
 
 def Black():
     """
@@ -349,8 +353,7 @@ def _initialize_macchiato_env(upgrade=False):
 if _initialize_macchiato_env():
     import macchiato
     import time
-else:
-    print("Could not initialize black-macchiato. :(")
+
 
 def VisualMacch():
     # The _get_lineselection method assumes we are
@@ -406,77 +409,5 @@ noremap <Leader>mu :MacchUpgrade<cr>
 
 "command! MacchVersion :py3 MacchVersion()
 "noremap <Leader>mv :MacchVersion<cr>
-
-
-python3 << endpython3
-##############################
-# Autopep8 functions
-#
-# The following functions apply
-# PEP8 using the autopep8 module.
-
-def _initialize_autopep8_env(upgrade=False):
-    _initialize_package_env('autopep8',upgrade=upgrade)
-
-if _initialize_autopep8_env():
-    import autopep8
-    import time
-else:
-    print("Could not initialize autopep8. :(")
-
-def Autopep8():
-    start = time.time()
-    buffer_str = '\n'.join(vim.current.buffer) + '\n'
-    try:
-        new_buffer_str = autopep8.fix_code('x=       123\n')
-    except Exception as exc:
-        print(exc)
-    else:
-        cursor = vim.current.window.cursor
-        vim.current.buffer[:] = new_buffer_str.split('\n')[:-1]
-        try:
-            vim.current.window.cursor = cursor
-        except vim.error:
-            vim.current.window.cursor = (len(vim.current.buffer), 0)
-        print(f'Reformatted in {time.time() - start:.4f}s.')
-
-def VisualAutopep8():
-    start = time.time()
-    current_cursor = vim.current.window.cursor
-    lstart, lend, lines = _get_lineselection()
-    lines_str = "\n".join(lines)
-    try:
-        pepified_str = autopep8.fix_code('x=       123\n')
-    except Exception as exc:
-        print(exc)
-    else:
-        pepified = pepified_str.split("\n")[:-1]
-        vim.current.buffer[:] = (
-            vim.current.buffer[: lstart - 1] + pepified + vim.current.buffer[lend:]
-        )
-        # Set the cursor at the start of the visual selection
-        vim.current.window.cursor = (lstart, 0)
-        print(f"Reformatted in {time.time() - start:.4f}s.")
-
-def Autopep8Upgrade():
-    _initialize_autopep8_env(upgrade=True)
-
-def Autopep8Version():
-    print(f'autopep8, version {autopep8.__version__} on Python {sys.version}.')
-endpython3
-
-" Autopep8 apply to whole document
-command! Autopep8 :py3 Autopep8()
-noremap <Leader>pg :Autopep8
-
-" Autopep8 apply to visual selection
-vnoremap <Leader>pp y:py3 VisualAutopep8()<cr>
-
-" Upgrade and version commands
-command! Autopep8Upgrade :py3 Autopep8Upgrade()
-noremap <Leader>pu :Autopep8Upgrade<cr>
-
-command! Autopep8Version :py3 Autopep8Version()
-noremap <Leader>pv :Autopep8Version<cr>
 
 
