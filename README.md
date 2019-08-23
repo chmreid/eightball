@@ -75,10 +75,10 @@ vim plugin.
 
 ```
 mkdir -p \
-    ~/.vim/plugin \
+    ~/.vim/ftplugin/python \
     && curl -LSso \
-    ~/.vim/plugin/eightball.vim \
-    https://raw.githubusercontent.com/chmreid/eightball/master/plugin/eightball.vim
+    ~/.vim/ftplugin/python/eightball.vim \
+    https://raw.githubusercontent.com/chmreid/eightball/master/ftplugin/python/eightball.vim
 ```
 
 You should also open vim, as it will create a Python virtual
