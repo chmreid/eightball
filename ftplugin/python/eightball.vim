@@ -6,17 +6,14 @@
 " 
 " Keyboard shortcuts defined here
 " are as follows:
-" <Leader>ee : (vis. mode) echo the contents of the current visual selection
-" <Leader>bg : apply Black to entire buffer, top to bottom
-" <Leader>bb : apply Black to entire buffer, preserving cursor location
-" <Leader>bu : upgrade Black
-" <Leader>bv : print Black version
-" <Leader>mm : (vis. mode) apply black-macchiato to visually selected lines
-" <Leader>mu : upgrade black-macchiato
-" <Leader>pg : apply autopep8 to entire buffer, top to bottom
-" <Leader>pp : (vis. mode) apply autopep8 to current visual selection
-" <Leader>pu : upgrade autopep8
-" <Leader>pv : print autopep8 version
+"
+" <Leader>8e : (vis. mode) echo the contents of the current visual selection
+" <Leader>8g : apply Black to entire buffer, top to bottom
+" <Leader>8b : apply Black to entire buffer, preserving cursor location
+" <Leader>8v : (vis. mode) apply Black to visual selection using black-macchiato
+"
+" <Leader>8i : initialize eightball virtual environment and install packages
+" <Leader>8u : upgrade packages in the eightball virtual environment
 
 if v:version < 700 || !has('python3')
     echo "This script requires vim7.0+ with Python 3.6 support."
@@ -73,8 +70,6 @@ import vim
 # directly from black.vim, the vim 
 # plugin for black.
 
-first_install = {}
-
 def _get_python_binary(exec_prefix):
     try:
         default = vim.eval("g:pymode_python").strip()
@@ -96,8 +91,15 @@ def _get_virtualenv_site_packages(venv_path, pyver):
         return venv_path / 'Lib' / 'site-packages'
     return venv_path / 'lib' / f'python{pyver[0]}.{pyver[1]}' / 'site-packages'
 
-def _initialize_package_env(package_name, upgrade=False):
-    pyver = sys.version_info[:2]
+def _get_pyver():
+    return sys.version_info[:2]
+
+def _initialize_virtualenv():
+    """
+    Description:
+        Install and set up a virtual environment for eightball.
+    """
+    pyver = _get_pyver()
     if pyver < (3, 6):
         print(f"Sorry, {package_name} requires Python 3.6+ to run.")
         return False
@@ -107,7 +109,6 @@ def _initialize_package_env(package_name, upgrade=False):
     import venv
     virtualenv_path = Path(vim.eval(f"g:virtualenv_path")).expanduser()
     virtualenv_site_packages = str(_get_virtualenv_site_packages(virtualenv_path, pyver))
-    first_install = False
     if not virtualenv_path.is_dir():
         print('Please wait, one time virtualenv setup for eightball.')
         _executable = sys.executable
@@ -118,28 +119,65 @@ def _initialize_package_env(package_name, upgrade=False):
             venv.create(virtualenv_path, with_pip=True)
         finally:
             sys.executable = _executable
-        first_instal = True
-    if first_install:
-        print(f'Installing {package_name} with pip...')
-    if upgrade:
-        print(f'Upgrading {package_name} with pip...')
-    if first_install or upgrade:
-        pp = str(_get_pip(virtualenv_path))
-        proc = subprocess.run(
-            [pp, 'install', '-U', package_name],
-            stdout=subprocess.PIPE
-        )
-        print(f'Finished installing {package_name}')
     if sys.path[0] != virtualenv_site_packages:
         sys.path.insert(0, virtualenv_site_packages)
     return True
 
-def _install_latest_pip(upgrade=False):
-    _initialize_package_env('pip',upgrade=upgrade)
+def _install_package(package_name, import_name=None, upgrade=False):
+    """
+    Description:
+        Install and upgrade packages using the eightball virtual environment.
 
-# This will automatically install a virtual environment
-if _install_latest_pip():
-    import time
+    Arguments:
+        package_name: the name of the package to use when installing via pip
+        import_name: the name of the package to use when importing into Python
+                     (if None, same as package_name)
+        upgrade: boolean, upgrade the package with pip if true
+    """
+    pyver = _get_pyver()
+    if not _initialize_virtualenv():
+        print('Could not install {package_name} due to problem with virtual environment')
+        return False
+
+    if import_name is None:
+        import_name = package_name
+
+    from pathlib import Path
+    import importlib
+    import subprocess
+
+    # Virtual environment paths
+    virtualenv_path = Path(vim.eval(f"g:virtualenv_path")).expanduser()
+    virtualenv_site_packages = str(_get_virtualenv_site_packages(virtualenv_path, pyver))
+    vpip = str(_get_pip(virtualenv_path))
+
+    # Check if a package is available
+    try:
+        # Try to import the package; if it succeeds, package is installed
+        importlib.import_module(import_name)
+        if upgrade:
+            # Package is already installed,
+            # but user specified upgrade option
+            print(f'Upgrading {package_name} with pip...')
+            vpip = str(_get_pip(virtualenv_path))
+            proc = subprocess.run(
+                [vpip, 'install', '-U', package_name],
+                stdout=subprocess.PIPE
+            )
+            print(f'Finished upgrading {package_name}')
+        else:
+            # Package is already installed, nothing to do
+            pass
+    except ModuleNotFoundError:
+        # The package is not present, so install it
+        print(f'Installing {package_name} with pip...')
+        proc = subprocess.run(
+            [vpip, 'install', package_name],
+            stdout=subprocess.PIPE
+        )
+        print(f'Finished installing {package_name}')
+
+    return True
 
 
 ##############################
@@ -201,28 +239,13 @@ def _get_lineselection():
 def PrintMySelection():
     _, _, vselection = _get_vselection()
     print("\n".join(vselection))
-endpython3
-
-" <Leader>e is the eightball prefix
-" e is for echo
-" <Leader> e e   --> echo the visual selection
-vnoremap <Leader>ee y:py3 PrintMySelection()<CR>
 
 
-python3 << endpython3
 ##############################
 # Black functions
 #
 # The following functions are refactored
 # from functions in black.vim.
-
-def _initialize_black_env(upgrade=False):
-    _initialize_package_env('black',upgrade=upgrade)
-
-if _initialize_black_env():
-    import black
-    import time
-
 
 def Black():
     """
@@ -311,33 +334,7 @@ def BlackCursor():
             vim.current.window.cursor = (len(vim.current.buffer), 0)
         print(f'Reformatted in {time.time() - start:.4f}s.')
 
-def BlackUpgrade():
-    _initialize_black_env(upgrade=True)
 
-def BlackVersion():
-    print(f'Black, version {black.__version__} on Python {sys.version}.')
-endpython3
-
-" This allows the user to type :Black and have
-" the entire document formatted using Black.
-" That is mapped to a keyboard shortcut.
-command! Black :py3 Black()
-noremap <Leader>bg :Black<cr>
-
-" Apply Black to the entire file,
-" remembering code location
-command! BlackCursor :py3 BlackCursor()
-noremap <Leader>bb :BlackCursor<cr>
-
-" Upgrade and version commands
-command! BlackUpgrade :py3 BlackUpgrade()
-noremap <Leader>bu :BlackUpgrade<cr>
-
-command! BlackVersion :py3 BlackVersion()
-noremap <Leader>bv :BlackVersion<cr>
-
-
-python3 << endpython3
 ##############################
 # Black-Macchiato functions
 #
@@ -347,15 +344,7 @@ python3 << endpython3
 # which formats Python code using
 # Black but only 
 
-def _initialize_macchiato_env(upgrade=False):
-    _initialize_package_env('black-macchiato',upgrade=upgrade)
-
-if _initialize_macchiato_env():
-    import macchiato
-    import time
-
-
-def VisualMacch():
+def VisualBlack():
     # The _get_lineselection method assumes we are
     # in visual mode (so marks < and > are defined),
     # so we must map this to a keybinding in vim
@@ -387,27 +376,64 @@ def VisualMacch():
     else:
         print(f"Already well formatted, good job. (took {time.time() - start:.4f}s)")
 
-def MacchUpgrade():
-    _initialize_macchiato_env(upgrade=True)
 
-####################
-## Pull request submitted
-## to define __version__
-#def MacchVersion():
-#    print(f'black-macchiato, version {macchiato.__version__} on Python {sys.version}.')
-####################
+##############################
+# Eightball functions
+# 
+# The following functions are for 
+# upgrading and installing software
+# in eightball's virtual environment.
+
+def EightballInit():
+    # This will automatically install a virtual environment
+    if _initialize_virtualenv():
+        import time
+
+    if _install_package('black'):
+        import black
+        import time
+
+    if _install_package('black-macchiato', 'macchiato'):
+        import macchiato
+        import time
+
+def EightballUpgrade():
+    _install_package('pip', upgrade=True)
+    _install_package('black', upgrade=True)
+    _install_package('black-macchiato', upgrade=True)
+
+# Always initialize eightball
+if EightballInit():
+    pass
+
 endpython3
 
-" Visual Macch Command
-" <Leader>e is the eightball prefix
-" m is for black-macchiato
-vnoremap <Leader>mm y:py3 VisualMacch()<cr>
+" Initialize/install command
+command! EightballInit :py3 EightballInit()
+noremap <Leader>bi :EightballInit<cr>
 
-" Upgrade and version commands
-command! MacchUpgrade :py3 MacchUpgrade()
-noremap <Leader>mu :MacchUpgrade<cr>
+" Upgrade command
+command! EightballUpgrade :py3 EightballUpgrade()
+noremap <Leader>bu :EightballUpgrade<cr>
 
-"command! MacchVersion :py3 MacchVersion()
-"noremap <Leader>mv :MacchVersion<cr>
+" Print out the visually selected text (demo function)
+" (e is for echo)
+vnoremap <Leader>be y:py3 PrintMySelection()<CR>
 
+" Apply Black to the entire file,
+" remembering line number of cursor.
+" (g is for start location (top of document))
+command! Black :py3 Black()
+noremap <Leader>bg :Black<cr>
+
+" Apply Black to the entire file,
+" remembering code location of cursor.
+command! BlackCursor :py3 BlackCursor()
+noremap <Leader>bb :BlackCursor<cr>
+
+" Apply Black to visual selection.
+" (v is for visual selection)
+vnoremap <Leader>bv y:py3 VisualBlack()<cr>
+
+python3 << endpython3
 
