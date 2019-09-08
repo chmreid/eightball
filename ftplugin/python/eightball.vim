@@ -6,14 +6,16 @@
 " 
 " Keyboard shortcuts defined here
 " are as follows:
+" (b prefix for Black)
 "
-" <Leader>8e : (vis. mode) echo the contents of the current visual selection
-" <Leader>8g : apply Black to entire buffer, top to bottom
-" <Leader>8b : apply Black to entire buffer, preserving cursor location
-" <Leader>8v : (vis. mode) apply Black to visual selection using black-macchiato
+" <Leader>be : (vis. mode) echo the contents of the current visual selection
+" <Leader>bg : apply Black to entire buffer, preserving cursor location
+" <Leader>bG : apply Black to entire buffer, top to bottom
+" <Leader>bb : (vis. mode) apply Black to visual selection using black-macchiato
+" <Leader>bv : (same as above)
 "
-" <Leader>8i : initialize eightball virtual environment and install packages
-" <Leader>8u : upgrade packages in the eightball virtual environment
+" <Leader>bi : initialize eightball virtual environment and install packages
+" <Leader>bu : upgrade packages in the eightball virtual environment
 
 if v:version < 700 || !has('python3')
     echo "This script requires vim7.0+ with Python 3.6 support."
@@ -38,7 +40,8 @@ endif
 " are set across eightball, while module-specific
 " settings can be prefixed with the module name.
 if !exists("g:eightball_linelength")
-  let g:eightball_linelength = 88
+  "let g:eightball_linelength = 88
+  let g:eightball_linelength = 100
 endif
 
 " eightball is intended to replace and expand
@@ -256,7 +259,7 @@ def Black():
     start = time.time()
     fast = bool(int(vim.eval("g:black_fast")))
     mode = black.FileMode(
-        line_length=int(vim.eval("g:black_linelength")),
+        line_length=int(vim.eval("g:eightball_linelength")),
         string_normalization=not bool(int(vim.eval("g:black_skip_string_normalization"))),
         is_pyi=vim.current.buffer.name.endswith('.pyi'),
     )
@@ -286,7 +289,7 @@ def BlackCursor():
     start = time.time()
     fast = bool(int(vim.eval("g:black_fast")))
     mode = black.FileMode(
-        line_length=int(vim.eval("g:black_linelength")),
+        line_length=int(vim.eval("g:eightball_linelength")),
         string_normalization=not bool(int(vim.eval("g:black_skip_string_normalization"))),
         is_pyi=vim.current.buffer.name.endswith('.pyi'),
     )
@@ -353,11 +356,15 @@ def VisualBlack():
 
     import subprocess
 
+    line_length = int(vim.eval("g:eightball_linelength")),
     current_cursor = vim.current.window.cursor
     lstart, lend, lines = _get_lineselection()
     lines_str = "\n".join(lines)
     p = subprocess.run(
-        ["black-macchiato"], stdout=subprocess.PIPE, input=lines_str, text=True
+        ["black-macchiato", "--line-length=%d"%(line_length)],
+        stdout=subprocess.PIPE,
+        input=lines_str,
+        text=True
     )
     if p.returncode == 0:
         # Get the new Black-ified code
@@ -424,15 +431,15 @@ vnoremap <Leader>be y:py3 PrintMySelection()<CR>
 " remembering line number of cursor.
 " (g is for start location (top of document))
 command! Black :py3 Black()
-noremap <Leader>bg :Black<cr>
+noremap <Leader>bG :Black<cr>
 
 " Apply Black to the entire file,
 " remembering code location of cursor.
 command! BlackCursor :py3 BlackCursor()
-noremap <Leader>bb :BlackCursor<cr>
+noremap <Leader>bg :BlackCursor<cr>
 
 " Apply Black to visual selection.
-" (v is for visual selection)
+vnoremap <Leader>bb y:py3 VisualBlack()<cr>
 vnoremap <Leader>bv y:py3 VisualBlack()<cr>
 
 python3 << endpython3
