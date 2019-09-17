@@ -13,6 +13,7 @@
 " <Leader>bG : apply Black to entire buffer, top to bottom
 " <Leader>bb : (vis. mode) apply Black to visual selection using black-macchiato
 " <Leader>bv : (same as above)
+" <Leader>bw : strip whitespace from the file
 "
 " <Leader>bi : initialize eightball virtual environment and install packages
 " <Leader>bu : upgrade packages in the eightball virtual environment
@@ -442,5 +443,12 @@ noremap <Leader>bg :BlackCursor<cr>
 vnoremap <Leader>bb y:py3 VisualBlack()<cr>
 vnoremap <Leader>bv y:py3 VisualBlack()<cr>
 
-python3 << endpython3
-
+" Strip trailing whitespace (,ss)
+function! StripWhitespace()
+	let save_cursor = getpos(".")
+	let old_query = getreg('/')
+	:%s/\s\+$//e
+	call setpos('.', save_cursor)
+	call setreg('/', old_query)
+endfunction
+noremap <Leader>bw :call StripWhitespace()<cr>
