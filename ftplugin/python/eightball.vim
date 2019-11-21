@@ -355,14 +355,19 @@ def VisualBlack():
     # in visual mode.
     start = time.time()
 
+    from pathlib import Path
     import subprocess
+
+    # Virtual environment paths
+    virtualenv_path = Path(vim.eval(f"g:virtualenv_path")).expanduser()
 
     line_length = int(vim.eval("g:eightball_linelength")),
     current_cursor = vim.current.window.cursor
     lstart, lend, lines = _get_lineselection()
     lines_str = "\n".join(lines)
+    bmachbin = os.path.join(virtualenv_path, "bin", "black-macchiato")
     p = subprocess.run(
-        ["black-macchiato", "--line-length=%d"%(line_length)],
+        [bmachbin, "--line-length=%d"%(line_length)],
         stdout=subprocess.PIPE,
         input=lines_str,
         text=True
